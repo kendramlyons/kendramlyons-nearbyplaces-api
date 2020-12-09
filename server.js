@@ -18,7 +18,7 @@ app.get('/places', (request, response) => {
     let metadata = data.places.map(x => {
         return{name: x.name, reviews: x.reviews};
     });
-    response.json(metadata());
+    response.json(metadata);
 });
 app.listen(port, () => {
     console.log(`Nearby Places API listening on port ${port}!`);
