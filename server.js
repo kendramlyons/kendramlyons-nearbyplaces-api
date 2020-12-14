@@ -16,7 +16,11 @@ app.get('/', (request, response) => {
 });
 
 app.post('/place', (request, response) => {
+    let name = req.body.name;
+    let address = req.body.address;
 
+    db.savePlace(name, address)
+        .then(x => response.json({message: 'Place Saved'}));
 });
 function groupBy(collection, property) {
     var i = 0, val, index,
@@ -35,13 +39,18 @@ function groupBy(collection, property) {
 }
 app.get('/places', (request, response) => {
     db.getPlaces().then(x => response.json(groupBy(x, 'placeid')))
-    .catch(e => response.status(500).json({error: e}));
+        .catch(e => response.status(500).json({error: e}));
 });
-app.post('/review/:placeId', (request, response) => {
-
+app.post('/review/:placeid:reviewid', (request, response) => {
+    let user = req.body.user;
+    let review = req.body.review;
+    let rating = req.body.rating;
+    db.saveReview(user, review, rating)
+        .then(x => response.json({message: 'Review added'}));
 });
 app.get('/search/:searchTerm/:location', (request, response) => {
-
+    db.getSearchResult().then(x => response.json())
+        .catch(e => response.status(404).json({error: e}))
 });
 app.listen(port, () => {
     console.log(`Nearby Places API listening on port ${port}!`);

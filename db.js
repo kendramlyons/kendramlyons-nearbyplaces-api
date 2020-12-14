@@ -10,31 +10,23 @@ const postgrePool = new Pool({
 });
 
 function getPlaces() {
-    return postgrePool.query('SELECT p.name, p.address, p.placeid, r.text, r.rating, r.user FROM nearbyplaces.places p join nearbyplaces.reviews r on p.placeid = r.placeid')
+    return postgrePool.query('SELECT p.name, p.address, p.image, p.placeid, r.text, r.rating, r.user FROM nearbyplaces.places p join nearbyplaces.reviews r on p.placeid = r.placeid')
         .then(x => x.rows);
 }
 
-function getQuestions(quizID) {
-    return postgrePool.query(
-        'select q.id, q.choices, q.answer from imagequiz.question q join imagequiz.quizquestions q2 on q.id = q2.questionid where q2.quizid = $1', [quizID])
+function savePlace(name, address) {
+    return postgrePool.query('INSERT into nearbyplaces.places (name, address)', [name, address])
         .then(x => x.rows);
 }
 
-function saveScore(username, quizID, score) {
-    return postgrePool.query('INSERT into imagequiz.score (username, quizid, score) values ($1, $2, $3) returning id', [username, quizID, score])
+function saveReview(user, review, rating) {
+    return postgrePool.query('INSERT into nearbyplaces.reviews (user, text, rating)', [user, review, rating])
         .then(x => x.rows);
 }
 
-function getQuizImageData(id) {
-    return postgrePool.query('select image from imagequiz.quiz where id = $1', [id])
-        .then(result => {
-            console.log(result);
-            if (result.rows[0]) {
-                return result.rows[0].image;
-            } else {
-                throw Error('The imgae data could not be found in the database.');
-            }
-        });
+function getSearchResult(query) {
+    return(postgrePool.query(`SELECT p.name, p.address, p.placeid, p.image FROM nearbyplaces.places p where ${query} in p.name`, [query]))
+        .then(x => x.rows);
 }
 
-module.exports = { getPlaces };
+module.exports = { getPlaces, savePlace, saveReview, getSearchResult };
