@@ -10,23 +10,45 @@ const postgrePool = new Pool({
 });
 
 function getPlaces() {
-    return postgrePool.query('SELECT p.name, p.address, p.image, p.placeid, r.text, r.rating, r.user FROM nearbyplaces.places p join nearbyplaces.reviews r on p.placeid = r.placeid')
+    return postgrePool.query('SELECT p.name, p.address, p.placeid, r.text, r.rating, r.user FROM nearbyplaces.places p join nearbyplaces.reviews r on p.placeid = r.placeid')
         .then(x => x.rows);
 }
 
 function savePlace(name, address) {
-    return postgrePool.query('INSERT into nearbyplaces.places (name, address)', [name, address])
+    return postgrePool.query('INSERT into nearbyplaces.places (name, address) values ($1, $2)', [name, address])
         .then(x => x.rows);
 }
 
-function saveReview(user, review, rating) {
-    return postgrePool.query('INSERT into nearbyplaces.reviews (user, text, rating)', [user, review, rating])
+function saveReview(user, review, rating, placeid) {
+    return postgrePool.query('INSERT into nearbyplaces.reviews (user, text, rating, placeid) values ($1, $2, $3, $4)', [user, review, rating, placeid])
         .then(x => x.rows);
 }
 
-function getSearchResult(query) {
-    return(postgrePool.query(`SELECT p.name, p.address, p.placeid, p.image FROM nearbyplaces.places p where ${query} in p.name`, [query]))
-        .then(x => x.rows);
+function getSearchResult(searchTerm, location) {
+    let query = `SELECT p.name, p.address, p.placeid FROM nearbyplaces.places p where `;
+    let conditions = [];
+    if (searchTerm.length > 0) {
+        conditions.push(`lower(p.name) like '%${searchTerm.toLowerCase()}%'`)
+    }
+    if (location.length > 0) {
+        conditions.push(`lower(p.address) like '%${location.toLowerCase()}%'`)
+    }
+    query += conditions.join(' and ');
+    console.log(query);
+    return(postgrePool.query(query)
+        .then(x => {console.log(x); return(x.rows);}));
 }
 
-module.exports = { getPlaces, savePlace, saveReview, getSearchResult };
+function getImageData(id) {
+    return postgrePool.query('select image from nearbyplaces.places where placeid = $1', [id])
+        .then(result => {
+            console.log(result);
+            if (result.rows[0]) {
+                return result.rows[0].image;
+            } else {
+                throw Error('The image data could not be found in the database.');
+            }
+        });
+}
+
+module.exports = { getPlaces, savePlace, saveReview, getSearchResult, getImageData };
